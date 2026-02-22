@@ -46,9 +46,11 @@ input,textarea,select{font-family:inherit}
 .layout{max-width:1280px;margin:0 auto;display:flex;gap:0;min-height:calc(100vh - 56px)}
 .sidebar{width:200px;flex-shrink:0;padding:16px 0 16px 20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:rgba(10,10,15,.65);backdrop-filter:blur(12px);border-right:1px solid var(--border)}
 .sidebar::-webkit-scrollbar{width:0}
-.nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:.84rem;color:var(--text-2);cursor:pointer;transition:all .15s;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:.84rem;color:var(--text-2);cursor:grab;transition:all .15s;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nav-item:hover{background:var(--accent-soft);color:var(--text)}
 .nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav-item.dragging{opacity:.4;cursor:grabbing}
+.nav-item.drag-over{border-top:2px solid var(--accent);margin-top:-2px}
 .nav-item .icon{font-size:1rem;flex-shrink:0;width:20px;text-align:center}
 .nav-divider{height:1px;background:var(--border);margin:10px 12px}
 .nav-add{color:var(--accent);font-size:.8rem;padding:8px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s}
@@ -503,14 +505,15 @@ function render(filter = '') {
 
   // Sidebar
   let sideHtml = '';
-  data.forEach(cat => {
-    sideHtml += `<div class="nav-item${!q ? '' : ''}" data-cat="${cat.id}" onclick="scrollToCat('${cat.id}')">
+  data.forEach((cat, i) => {
+    sideHtml += `<div class="nav-item" draggable="true" data-cat="${cat.id}" data-idx="${i}" onclick="scrollToCat('${cat.id}')">
       <span class="icon">${cat.icon}</span>${cat.name}
     </div>`;
   });
   sideHtml += '<div class="nav-divider"></div>';
   sideHtml += '<div class="nav-add" onclick="openAddCategory()">+ 新建分类</div>';
   sidebar.innerHTML = sideHtml;
+  initSidebarDrag();
 
   // Main content
   let mainHtml = '';
@@ -807,6 +810,52 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) overlay.classList.remove('show');
   });
 });
+
+// ===== SIDEBAR DRAG REORDER =====
+let dragSrcIdx = null;
+
+function initSidebarDrag() {
+  const items = document.querySelectorAll('.nav-item[draggable]');
+  items.forEach(item => {
+    item.addEventListener('dragstart', onDragStart);
+    item.addEventListener('dragover', onDragOver);
+    item.addEventListener('dragleave', onDragLeave);
+    item.addEventListener('drop', onDrop);
+    item.addEventListener('dragend', onDragEnd);
+  });
+}
+
+function onDragStart(e) {
+  dragSrcIdx = parseInt(this.dataset.idx);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('drag-over');
+}
+
+function onDragLeave() {
+  this.classList.remove('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  const targetIdx = parseInt(this.dataset.idx);
+  if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  const [moved] = data.splice(dragSrcIdx, 1);
+  data.splice(targetIdx, 0, moved);
+  saveData();
+  render(document.getElementById('searchInput').value);
+}
+
+function onDragEnd() {
+  dragSrcIdx = null;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('dragging', 'drag-over'));
+}
 
 // ===== INIT =====
 loadWallpaper();
