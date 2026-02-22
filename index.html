@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Nav - AI 生态资源导航</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08080d;--surface:#0e0e16;--card:#15151f;--card-hover:#1c1c2e;
+  --border:#252538;--border-active:#7c5cff;
+  --text:#e4e4ec;--text-2:#a0a0b8;--text-3:#6a6a82;
+  --accent:#7c5cff;--accent-soft:rgba(124,92,255,.12);
+  --danger:#ef4444;--danger-soft:rgba(239,68,68,.12);
+  --green:#34d399;--blue:#60a5fa;--orange:#fb923c;--pink:#f472b6;--cyan:#22d3ee;--yellow:#fbbf24;--red:#f87171;--indigo:#818cf8;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+
+/* ===== HEADER ===== */
+.header{position:sticky;top:0;z-index:100;background:rgba(8,8,13,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px}
+.header-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;height:56px;gap:16px}
+.logo{font-size:1.2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;flex-shrink:0}
+.search-box{flex:1;max-width:400px;position:relative}
+.search-box input{width:100%;padding:8px 12px 8px 36px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;outline:none;transition:border .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-3)}
+.header-actions{display:flex;gap:8px;margin-left:auto;flex-shrink:0}
+.btn-sm{padding:6px 14px;font-size:.78rem;font-weight:600;border-radius:7px;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-ghost{color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--text-3);color:var(--text)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6b4ce6}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+
+/* ===== SIDEBAR NAV (category tabs) ===== */
+.layout{max-width:1280px;margin:0 auto;display:flex;gap:0;min-height:calc(100vh - 56px)}
+.sidebar{width:200px;flex-shrink:0;padding:16px 0 16px 20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:0}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:.84rem;color:var(--text-2);cursor:pointer;transition:all .15s;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-item:hover{background:var(--accent-soft);color:var(--text)}
+.nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav-item .icon{font-size:1rem;flex-shrink:0;width:20px;text-align:center}
+.nav-divider{height:1px;background:var(--border);margin:10px 12px}
+.nav-add{color:var(--accent);font-size:.8rem;padding:8px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s}
+.nav-add:hover{background:var(--accent-soft)}
+
+/* ===== MAIN CONTENT ===== */
+.main{flex:1;padding:20px 24px 60px;min-width:0}
+
+/* Section */
+.section{margin-bottom:36px}
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-head .s-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.section-head h2{font-size:1.05rem;font-weight:700;flex:1}
+.section-head .s-count{font-size:.72rem;color:var(--text-3);background:var(--card);padding:2px 10px;border-radius:20px}
+.section-add{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--accent);border:1px dashed var(--border);font-size:1rem;transition:all .15s;flex-shrink:0}
+.section-add:hover{border-color:var(--accent);background:var(--accent-soft)}
+.section-edit{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:all .15s;flex-shrink:0;font-size:.75rem}
+.section-edit:hover{color:var(--text);background:var(--card)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;transition:all .18s;cursor:pointer;position:relative;display:block;overflow:hidden}
+.card:hover{background:var(--card-hover);border-color:color-mix(in srgb,var(--card-accent) 50%,var(--border));transform:translateY(-1px);box-shadow:var(--shadow)}
+.card-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.card-logo{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;color:#fff}
+.card-top h3{font-size:.88rem;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-tag{font-size:.62rem;padding:2px 7px;border-radius:12px;font-weight:600;flex-shrink:0;background:var(--accent-soft);color:var(--accent)}
+.card p{font-size:.78rem;color:var(--text-2);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Card actions (hover) */
+.card-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.card:hover .card-actions{opacity:1}
+.card-act{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;background:var(--surface);border:1px solid var(--border);color:var(--text-3);transition:all .1s}
+.card-act:hover{color:var(--text);border-color:var(--text-3)}
+.card-act.del:hover{color:var(--danger);border-color:var(--danger)}
+
+/* Add card */
+.card-add{border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text-3);font-size:.84rem;min-height:80px;transition:all .15s}
+.card-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:420px;max-width:90vw;max-height:85vh;overflow-y:auto;padding:24px}
+.modal h3{font-size:1.05rem;font-weight:700;margin-bottom:18px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.78rem;color:var(--text-2);margin-bottom:5px;font-weight:500}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;outline:none;transition:border .2s}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:56px}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+.color-options{display:flex;gap:6px;flex-wrap:wrap}
+.color-opt{width:28px;height:28px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:border .15s}
+.color-opt.active{border-color:#fff}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 20px;font-size:.84rem;color:var(--text);box-shadow:var(--shadow);z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .layout{display:block}
+  .main{padding:16px}
+}
+@media(max-width:640px){
+  .header-inner{height:48px;gap:8px;padding:0 12px}
+  .logo{font-size:1rem}
+  .header-actions .btn-label{display:none}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">AI Nav</div>
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="搜索网站..." autocomplete="off">
+    </div>
+    <div class="header-actions">
+      <button class="btn-sm btn-ghost" onclick="importData()" title="导入配置"><span>&#8593;</span> <span class="btn-label">导入</span></button>
+      <button class="btn-sm btn-ghost" onclick="exportData()" title="导出配置"><span>&#8595;</span> <span class="btn-label">导出</span></button>
+      <button class="btn-sm btn-primary" onclick="openAddCategory()" title="新建分类">+ <span class="btn-label">分类</span></button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar"></nav>
+  <!-- MAIN -->
+  <main class="main" id="mainContent"></main>
+</div>
+
+<!-- MODAL: Add/Edit Site -->
+<div class="modal-overlay" id="siteModal">
+  <div class="modal">
+    <h3 id="siteModalTitle">添加网站</h3>
+    <input type="hidden" id="siteEditId">
+    <input type="hidden" id="siteEditCat">
+    <div class="form-group">
+      <label>网站名称 *</label>
+      <input type="text" id="siteName" placeholder="如: ChatGPT">
+    </div>
+    <div class="form-group">
+      <label>网址 *</label>
+      <input type="url" id="siteUrl" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea id="siteDesc" placeholder="简要说明（可选）"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>图标文字</label>
+        <input type="text" id="siteIcon" placeholder="1~3个字符" maxlength="3">
+      </div>
+      <div class="form-group">
+        <label>标签</label>
+        <input type="text" id="siteTag" placeholder="如: 官方、热门">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>颜色</label>
+      <div class="color-options" id="colorOptions"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-ghost" onclick="closeModal('siteModal')">取消</button>
+      <button class="btn-sm btn-primary" onclick="saveSite()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Category -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal">
+    <h3 id="catModalTitle">新建分类</h3>
+    <input type="hidden" id="catEditId">
+    <div class="form-group">
+      <label>分类名称 *</label>
+      <input type="text" id="catName" placeholder="如: 设计工具">
+    </div>
+    <div class="form-group">
+      <label>图标（Emoji）</label>
+      <input type="text" id="catIcon" placeholder="如: 🎨" maxlength="4">
+    </div>
+    <div class="form-group">
+      <label>主题色</label>
+      <div class="color-options" id="catColorOptions"></div>
+    </div>
+    <div class="modal-footer" id="catModalFooter">
+      <button class="btn-sm btn-ghost" onclick="closeModal('catModal')">取消</button>
+      <button class="btn-sm btn-primary" onclick="saveCategory()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input for import -->
+<input type="file" id="fileImport" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+// ===== COLOR PALETTE =====
+const COLORS = ['#7c5cff','#60a5fa','#34d399','#fb923c','#f472b6','#22d3ee','#fbbf24','#f87171','#818cf8','#a78bfa','#4ade80','#e879f9','#38bdf8','#c084fc','#fb7185','#2dd4bf'];
+
+// ===== DEFAULT DATA =====
+const DEFAULT_DATA = [
+  {
+    id:'cat_ai_chat',name:'AI 对话',icon:'🤖',color:'#7c5cff',builtin:true,
+    sites:[
+      {id:'s_chatgpt',name:'ChatGPT',url:'https://chatgpt.com/',desc:'OpenAI 旗舰对话模型',iconText:'GPT',color:'#9326e9',tag:'常用',builtin:true},
+      {id:'s_gemini',name:'Gemini',url:'https://gemini.google.com/',desc:'Google DeepMind 大模型',iconText:'G',color:'#4285f4',tag:'Google',builtin:true},
+      {id:'s_claude',name:'Claude',url:'https://claude.ai/',desc:'Anthropic Claude AI 对话',iconText:'C',color:'#7c5cff',tag:'常用',builtin:true},
+      {id:'s_tempchat',name:'临时聊天室',url:'https://tool.fologde.com/temp-chat/',desc:'一方工具箱临时聊天',iconText:'聊',color:'#f01313',tag:'工具',builtin:true},
+    ]
+  },
+  {
+    id:'cat_api',name:'API 中转站',icon:'🔑',color:'#fb923c',builtin:true,
+    sites:[
+      {id:'s_yunwu',name:'云雾 AI',url:'https://yunwu.ai/',desc:'国内直连 API 中转服务',iconText:'API',color:'#f1c40f',tag:'中转',builtin:true},
+      {id:'s_foxcode',name:'FoxCode',url:'https://foxcode.rjj.cc/',desc:'API 中转仪表板',iconText:'Fox',color:'#13ae67',tag:'中转',builtin:true},
+      {id:'s_x666',name:'x666',url:'https://x666.me/console/token',desc:'50 刀额度 API 中转',iconText:'666',color:'#f9620e',tag:'中转',builtin:true},
+      {id:'s_undying',name:'Undying API',url:'https://vip.undyingapi.com/console/topup',desc:'Undying API 充值面板',iconText:'UN',color:'#fc4548',tag:'中转',builtin:true},
+      {id:'s_rightcodes',name:'Right Codes',url:'https://www.right.codes/models',desc:'企业级 API 中转服务',iconText:'RC',color:'#f1c40f',tag:'企业',builtin:true},
+      {id:'s_anyrouter',name:'AnyRouter',url:'https://anyrouter.top/pricing',desc:'API 路由中转定价',iconText:'AR',color:'#4b3c36',tag:'中转',builtin:true},
+      {id:'s_ggb',name:'猪猪侠',url:'https://ai.qaq.al/keys',desc:'API Key 管理',iconText:'猪猪',color:'#fc4548',tag:'中转',builtin:true},
+      {id:'s_suiyuan',name:'随缘',url:'https://newapi.tanmw.top/console/token',desc:'随缘 API 中转',iconText:'随缘',color:'#c8ac70',tag:'中转',builtin:true},
+    ]
+  },
+  {
+    id:'cat_mcp_dir',name:'MCP 目录',icon:'📂',color:'#a78bfa',builtin:true,
+    sites:[
+      {id:'s_mcpmarket',name:'MCP Market',url:'https://mcpmarket.com/',desc:'按 GitHub Stars 排名的 Top 100 排行榜',iconText:'MM',color:'#7c5cff',tag:'TOP 100',builtin:true},
+      {id:'s_awesome',name:'Awesome MCP',url:'https://mcp-awesome.com/',desc:'1200+ 质量验证 MCP 目录',iconText:'★',color:'#a78bfa',tag:'1200+',builtin:true},
+      {id:'s_mcpservers',name:'MCPServers.org',url:'https://mcpservers.org/',desc:'覆盖多种类别的 MCP 门户',iconText:'MS',color:'#818cf8',tag:'目录',builtin:true},
+      {id:'s_aiagents',name:'AI Agents List',url:'https://aiagentslist.com/mcp-servers',desc:'593+ MCP Server 按分类浏览',iconText:'AI',color:'#60a5fa',tag:'593+',builtin:true},
+      {id:'s_aixploria',name:'AIxploria',url:'https://www.aixploria.com/en/list-best-mcp-servers-directory-ai/',desc:'35 种语言多语言 MCP 目录',iconText:'AX',color:'#22d3ee',tag:'500+',builtin:true},
+      {id:'s_smithery',name:'Smithery',url:'https://smithery.ai/',desc:'自动化安装指南的 MCP 目录',iconText:'SM',color:'#4ade80',tag:'2200+',builtin:true},
+      {id:'s_gh_awesome',name:'awesome-mcp-servers',url:'https://github.com/punkpeye/awesome-mcp-servers',desc:'社区维护 GitHub 精选列表',iconText:'GH',color:'#6e7681',tag:'GitHub',builtin:true},
+    ]
+  },
+  {
+    id:'cat_mcp_hot',name:'MCP 热门 Server',icon:'🔥',color:'#f472b6',builtin:true,
+    sites:[
+      {id:'s_gh_mcp',name:'GitHub MCP',url:'https://github.com/github/github-mcp-server',desc:'GitHub 官方 MCP Server',iconText:'GH',color:'#6e7681',tag:'15.7k',builtin:true},
+      {id:'s_playwright',name:'Playwright MCP',url:'https://github.com/microsoft/playwright-mcp',desc:'微软浏览器自动化 MCP',iconText:'PW',color:'#2ea043',tag:'11.9k',builtin:true},
+      {id:'s_figma',name:'Figma Context',url:'https://github.com/GLips/Figma-Context-MCP',desc:'Figma 设计稿转代码',iconText:'FG',color:'#a259ff',tag:'10k',builtin:true},
+      {id:'s_mindsdb',name:'MindsDB',url:'https://github.com/mindsdb/mindsdb',desc:'AI 查询引擎，联邦数据上构建 AI',iconText:'MD',color:'#00b06d',tag:'32k',builtin:true},
+      {id:'s_pipedream',name:'Pipedream',url:'https://github.com/PipedreamHQ/pipedream',desc:'连接 API 极速自动化工作流',iconText:'PD',color:'#38bdf8',tag:'10k',builtin:true},
+      {id:'s_puppeteer',name:'mcp-playwright',url:'https://github.com/executeautomation/mcp-playwright',desc:'浏览器自动化网页抓取与交互',iconText:'PP',color:'#e879f9',tag:'12k+',builtin:true},
+      {id:'s_ghidra',name:'Ghidra MCP',url:'https://github.com/LaurieWired/GhidraMCP',desc:'AI 辅助逆向工程分析',iconText:'GR',color:'#f87171',tag:'5.5k',builtin:true},
+      {id:'s_deskcommander',name:'Desktop Commander',url:'https://github.com/wonderwhy-er/DesktopCommanderMCP',desc:'桌面操控 MCP Server',iconText:'DC',color:'#fbbf24',tag:'3.9k',builtin:true},
+    ]
+  },
+  {
+    id:'cat_skill',name:'Skill 商店',icon:'🧩',color:'#22d3ee',builtin:true,
+    sites:[
+      {id:'s_agentskills',name:'AgentSkills.me',url:'https://agentskills.me/',desc:'AI Agent Skill 市场',iconText:'AS',color:'#fc4548',tag:'市场',builtin:true},
+      {id:'s_skillssh',name:'Skills.sh',url:'https://skills.sh/',desc:'The Agent Skills 平台',iconText:'SK',color:'#e67e22',tag:'平台',builtin:true},
+      {id:'s_openclaw',name:'OpenClaw Skills',url:'https://openclawskills.io/skills',desc:'OpenClaw 开源 Skill 平台',iconText:'OC',color:'#f01313',tag:'开源',builtin:true},
+      {id:'s_skillguide',name:'Skill 安装指南',url:'https://linux.do/t/topic/1607893',desc:'Linux.do 社区 Skill 安装教程',iconText:'教程',color:'#7dac68',tag:'教程',builtin:true},
+    ]
+  },
+  {
+    id:'cat_dev',name:'开发工具 & SDK',icon:'🛠️',color:'#60a5fa',builtin:true,
+    sites:[
+      {id:'s_ts_sdk',name:'TypeScript SDK',url:'https://github.com/modelcontextprotocol/typescript-sdk',desc:'MCP 官方 TypeScript SDK',iconText:'TS',color:'#3178c6',tag:'官方',builtin:true},
+      {id:'s_py_sdk',name:'Python SDK',url:'https://github.com/modelcontextprotocol/python-sdk',desc:'MCP 官方 Python SDK',iconText:'PY',color:'#3776ab',tag:'官方',builtin:true},
+      {id:'s_claude_code',name:'Claude Code',url:'https://github.com/anthropics/claude-code',desc:'Anthropic AI 编程 Agent',iconText:'CC',color:'#7c5cff',tag:'Agent',builtin:true},
+      {id:'s_composio_hub',name:'Composio MCP Hub',url:'https://mcp.composio.dev/',desc:'MCP 一键安装配置生成器',iconText:'CM',color:'#4ade80',tag:'一键配置',builtin:true},
+      {id:'s_cookbook',name:'Anthropic Cookbook',url:'https://github.com/anthropics/anthropic-cookbook/tree/main/misc/model_context_protocol',desc:'官方 MCP 示例和教程集',iconText:'CB',color:'#fb923c',tag:'示例',builtin:true},
+      {id:'s_github_me',name:'GitHub',url:'https://github.com/',desc:'全球最大代码托管平台',iconText:'GH',color:'#4b4b4b',tag:'开发',builtin:true},
+    ]
+  },
+  {
+    id:'cat_cloud',name:'云服务 & 数据库',icon:'☁️',color:'#34d399',builtin:true,
+    sites:[
+      {id:'s_supabase',name:'Supabase',url:'https://supabase.com/dashboard/projects',desc:'开源 Firebase 替代方案',iconText:'SB',color:'#3ecf8e',tag:'BaaS',builtin:true},
+      {id:'s_aiven',name:'Aiven',url:'https://console.aiven.io/signup?campaign=postgresql',desc:'云端 PostgreSQL 托管服务',iconText:'AV',color:'#0071c0',tag:'数据库',builtin:true},
+      {id:'s_aliyun',name:'阿里云瑶池',url:'https://yaochi.console.aliyun.com/gpdb/cn-hangzhou/supabase',desc:'阿里云 Supabase 兼容服务',iconText:'阿里',color:'#f01313',tag:'国内',builtin:true},
+      {id:'s_tavily',name:'Tavily API',url:'https://app.tavily.com/home',desc:'AI 搜索 API 平台',iconText:'TV',color:'#f1c40f',tag:'搜索',builtin:true},
+    ]
+  },
+  {
+    id:'cat_mail',name:'邮箱',icon:'📧',color:'#fb7185',builtin:true,
+    sites:[
+      {id:'s_qqmail',name:'QQ 邮箱',url:'https://wx.mail.qq.com/',desc:'腾讯 QQ 邮箱',iconText:'QQ',color:'#12b7f5',tag:'常用',builtin:true},
+      {id:'s_163mail',name:'网易 163',url:'https://email.163.com/',desc:'网易邮箱',iconText:'163',color:'#fd1e1e',tag:'常用',builtin:true},
+      {id:'s_tempmail',name:'Temp Mail',url:'https://mail.tm/en/',desc:'临时邮箱，一次性使用',iconText:'TM',color:'#c8ac70',tag:'临时',builtin:true},
+    ]
+  },
+  {
+    id:'cat_docs',name:'文档 & 社区',icon:'📖',color:'#fbbf24',builtin:true,
+    sites:[
+      {id:'s_mcp_doc',name:'MCP 官方文档',url:'https://modelcontextprotocol.io/',desc:'协议规范、快速入门和开发者指南',iconText:'文档',color:'#fb923c',tag:'官方',builtin:true},
+      {id:'s_anthropic_doc',name:'Anthropic 文档',url:'https://docs.anthropic.com/en/docs/agents-and-tools/mcp',desc:'Claude MCP 集成文档',iconText:'AN',color:'#7c5cff',tag:'Claude',builtin:true},
+      {id:'s_spec',name:'MCP 协议规范',url:'https://spec.modelcontextprotocol.io/',desc:'Transport、Capability、Tool 协议定义',iconText:'SP',color:'#818cf8',tag:'Spec',builtin:true},
+      {id:'s_mcp_org',name:'MCP 官方组织',url:'https://github.com/modelcontextprotocol',desc:'含协议规范、SDK 和参考实现',iconText:'MC',color:'#6e7681',tag:'GitHub',builtin:true},
+      {id:'s_reddit',name:'r/mcp (Reddit)',url:'https://www.reddit.com/r/mcp/',desc:'MCP Reddit 社区讨论',iconText:'RE',color:'#ff4500',tag:'社区',builtin:true},
+      {id:'s_composio_blog',name:'Composio Top 10',url:'https://composio.dev/blog/10-awesome-mcp-servers-to-make-your-life-easier',desc:'实用 MCP Server 推荐教程',iconText:'📰',color:'#34d399',tag:'博客',builtin:true},
+      {id:'s_builder_blog',name:'Builder.io Best 2026',url:'https://www.builder.io/blog/best-mcp-servers-2026',desc:'全栈开发者 MCP 精选',iconText:'🏗',color:'#60a5fa',tag:'博客',builtin:true},
+      {id:'s_k2view_blog',name:'K2view Top 15',url:'https://www.k2view.com/blog/awesome-mcp-servers',desc:'企业级 MCP Server 深度评测',iconText:'K2',color:'#22d3ee',tag:'企业',builtin:true},
+      {id:'s_apidog_blog',name:'Apidog Top 10',url:'https://apidog.com/blog/top-10-mcp-servers/',desc:'含安装步骤的 MCP 推荐',iconText:'🐕',color:'#fb923c',tag:'教程',builtin:true},
+      {id:'s_codex_install',name:'Codex 安装教程',url:'https://developers.openai.com/codex/quickstart/',desc:'OpenAI Codex CLI 官方快速入门指南',iconText:'CX',color:'#10a37f',tag:'教程',builtin:true},
+      {id:'s_claude_code_install',name:'Claude Code 安装教程',url:'https://docs.anthropic.com/en/docs/claude-code/overview',desc:'Anthropic Claude Code 官方安装与使用指南',iconText:'CC',color:'#7c5cff',tag:'教程',builtin:true},
+    ]
+  },
+  {
+    id:'cat_video',name:'影视',icon:'🎬',color:'#e879f9',builtin:true,
+    sites:[
+      {id:'s_bilibili',name:'哔哩哔哩',url:'https://www.bilibili.com/',desc:'学习与娱乐视频平台',iconText:'B',color:'#ff5ca1',tag:'视频',builtin:true},
+    ]
+  },
+  {
+    id:'cat_game',name:'游戏',icon:'🎮',color:'#4ade80',builtin:true,
+    sites:[
+      {id:'s_gamer520',name:'Gamer520',url:'https://www.gamer520.com/',desc:'游戏资源下载站',iconText:'520',color:'#2ea043',tag:'游戏',builtin:true},
+      {id:'s_kungal',name:'KUN Galgame',url:'https://www.kungal.com/galgame',desc:'Galgame 资源社区',iconText:'GAL',color:'#f472b6',tag:'Galgame',builtin:true},
+    ]
+  },
+];
+
+// ===== STATE =====
+let data = [];
+const STORAGE_KEY = 'ai_nav_data';
+
+const DATA_VERSION = 3; // bump this when DEFAULT_DATA changes
+const VER_KEY = 'ai_nav_version';
+
+function loadData() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const savedVer = parseInt(localStorage.getItem(VER_KEY) || '0', 10);
+  if (saved && savedVer === DATA_VERSION) {
+    try { data = JSON.parse(saved); return; } catch(e) {}
+  }
+  if (saved && savedVer < DATA_VERSION) {
+    // Merge: keep user customizations, add new builtin categories/sites
+    try {
+      const old = JSON.parse(saved);
+      const merged = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      // Preserve user-added categories
+      old.forEach(oc => {
+        if (!oc.builtin && !merged.find(mc => mc.id === oc.id)) merged.push(oc);
+      });
+      // Preserve user-added sites in builtin categories & user edits
+      merged.forEach(mc => {
+        const oc = old.find(o => o.id === mc.id);
+        if (!oc) return;
+        oc.sites.forEach(os => {
+          if (!os.builtin && !mc.sites.find(ms => ms.id === os.id)) mc.sites.push(os);
+        });
+      });
+      data = merged;
+    } catch(e) {
+      data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+  } else {
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+  localStorage.setItem(VER_KEY, String(DATA_VERSION));
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function uid() {
+  return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ===== RENDER =====
+function render(filter = '') {
+  const q = filter.toLowerCase().trim();
+  const sidebar = document.getElementById('sidebar');
+  const main = document.getElementById('mainContent');
+
+  // Sidebar
+  let sideHtml = '';
+  data.forEach(cat => {
+    sideHtml += `<div class="nav-item${!q ? '' : ''}" data-cat="${cat.id}" onclick="scrollToCat('${cat.id}')">
+      <span class="icon">${cat.icon}</span>${cat.name}
+    </div>`;
+  });
+  sideHtml += '<div class="nav-divider"></div>';
+  sideHtml += '<div class="nav-add" onclick="openAddCategory()">+ 新建分类</div>';
+  sidebar.innerHTML = sideHtml;
+
+  // Main content
+  let mainHtml = '';
+  data.forEach(cat => {
+    const filteredSites = q
+      ? cat.sites.filter(s => (s.name + s.desc + s.tag + s.url + s.iconText).toLowerCase().includes(q))
+      : cat.sites;
+
+    if (q && filteredSites.length === 0) return;
+
+    const editBtn = !cat.builtin
+      ? `<button class="section-edit" onclick="openEditCategory('${cat.id}')" title="编辑分类">&#9998;</button>
+         <button class="section-edit" onclick="deleteCategory('${cat.id}')" title="删除分类" style="color:var(--danger)">&#10005;</button>`
+      : '';
+
+    mainHtml += `<div class="section" id="sec_${cat.id}">
+      <div class="section-head">
+        <div class="s-icon" style="background:${cat.color}20;color:${cat.color}">${cat.icon}</div>
+        <h2>${cat.name}</h2>
+        ${editBtn}
+        <span class="s-count">${filteredSites.length} 个</span>
+        <button class="section-add" onclick="openAddSite('${cat.id}')" title="添加网站">+</button>
+      </div>
+      <div class="grid">`;
+
+    filteredSites.forEach(s => {
+      const bg = s.color || cat.color;
+      mainHtml += `<a href="${escHtml(s.url)}" target="_blank" class="card" style="--card-accent:${bg}" data-sid="${s.id}" data-cid="${cat.id}">
+        <div class="card-actions">
+          <button class="card-act" onclick="event.preventDefault();event.stopPropagation();openEditSite('${cat.id}','${s.id}')" title="编辑">&#9998;</button>
+          <button class="card-act del" onclick="event.preventDefault();event.stopPropagation();deleteSite('${cat.id}','${s.id}')" title="删除">&#10005;</button>
+        </div>
+        <div class="card-top">
+          <div class="card-logo" style="background:${bg}">${escHtml(s.iconText || s.name.slice(0, 2))}</div>
+          <h3>${escHtml(s.name)}</h3>
+          ${s.tag ? `<span class="card-tag">${escHtml(s.tag)}</span>` : ''}
+        </div>
+        ${s.desc ? `<p>${escHtml(s.desc)}</p>` : ''}
+      </a>`;
+    });
+
+    mainHtml += `</div></div>`;
+  });
+  main.innerHTML = mainHtml;
+
+  highlightSidebar();
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== SIDEBAR SCROLL HIGHLIGHT =====
+function scrollToCat(catId) {
+  const el = document.getElementById('sec_' + catId);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function highlightSidebar() {
+  const sections = document.querySelectorAll('.section');
+  const navItems = document.querySelectorAll('.nav-item');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const catId = e.target.id.replace('sec_', '');
+        navItems.forEach(n => n.classList.toggle('active', n.dataset.cat === catId));
+      }
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+}
+
+// ===== SEARCH =====
+document.getElementById('searchInput').addEventListener('input', function() {
+  render(this.value);
+});
+
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// Color picker renderer
+function renderColorPicker(containerId, selected) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = COLORS.map(c =>
+    `<div class="color-opt${c === selected ? ' active' : ''}" style="background:${c}" data-color="${c}" onclick="pickColor(this,'${containerId}')"></div>`
+  ).join('');
+}
+function pickColor(el, containerId) {
+  document.querySelectorAll(`#${containerId} .color-opt`).forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+function getPickedColor(containerId) {
+  const active = document.querySelector(`#${containerId} .color-opt.active`);
+  return active ? active.dataset.color : COLORS[0];
+}
+
+// ===== SITE CRUD =====
+function openAddSite(catId) {
+  document.getElementById('siteModalTitle').textContent = '添加网站';
+  document.getElementById('siteEditId').value = '';
+  document.getElementById('siteEditCat').value = catId;
+  document.getElementById('siteName').value = '';
+  document.getElementById('siteUrl').value = '';
+  document.getElementById('siteDesc').value = '';
+  document.getElementById('siteIcon').value = '';
+  document.getElementById('siteTag').value = '';
+  const cat = data.find(c => c.id === catId);
+  renderColorPicker('colorOptions', cat ? cat.color : COLORS[0]);
+  openModal('siteModal');
+  document.getElementById('siteName').focus();
+}
+
+function openEditSite(catId, siteId) {
+  const cat = data.find(c => c.id === catId);
+  const site = cat && cat.sites.find(s => s.id === siteId);
+  if (!site) return;
+  document.getElementById('siteModalTitle').textContent = '编辑网站';
+  document.getElementById('siteEditId').value = siteId;
+  document.getElementById('siteEditCat').value = catId;
+  document.getElementById('siteName').value = site.name;
+  document.getElementById('siteUrl').value = site.url;
+  document.getElementById('siteDesc').value = site.desc || '';
+  document.getElementById('siteIcon').value = site.iconText || '';
+  document.getElementById('siteTag').value = site.tag || '';
+  renderColorPicker('colorOptions', site.color || cat.color);
+  openModal('siteModal');
+}
+
+function saveSite() {
+  const name = document.getElementById('siteName').value.trim();
+  const url = document.getElementById('siteUrl').value.trim();
+  if (!name || !url) { toast('请填写名称和网址'); return; }
+  const catId = document.getElementById('siteEditCat').value;
+  const editId = document.getElementById('siteEditId').value;
+  const cat = data.find(c => c.id === catId);
+  if (!cat) return;
+
+  const siteObj = {
+    id: editId || uid(),
+    name,
+    url,
+    desc: document.getElementById('siteDesc').value.trim(),
+    iconText: document.getElementById('siteIcon').value.trim() || name.slice(0, 2),
+    tag: document.getElementById('siteTag').value.trim(),
+    color: getPickedColor('colorOptions'),
+    builtin: false,
+  };
+
+  if (editId) {
+    const idx = cat.sites.findIndex(s => s.id === editId);
+    if (idx >= 0) { siteObj.builtin = cat.sites[idx].builtin; cat.sites[idx] = siteObj; }
+  } else {
+    cat.sites.push(siteObj);
+  }
+
+  saveData();
+  closeModal('siteModal');
+  render(document.getElementById('searchInput').value);
+  toast(editId ? '已更新' : '已添加');
+}
+
+function deleteSite(catId, siteId) {
+  if (!confirm('确定删除该网站？')) return;
+  const cat = data.find(c => c.id === catId);
+  if (!cat) return;
+  cat.sites = cat.sites.filter(s => s.id !== siteId);
+  saveData();
+  render(document.getElementById('searchInput').value);
+  toast('已删除');
+}
+
+// ===== CATEGORY CRUD =====
+function openAddCategory() {
+  document.getElementById('catModalTitle').textContent = '新建分类';
+  document.getElementById('catEditId').value = '';
+  document.getElementById('catName').value = '';
+  document.getElementById('catIcon').value = '';
+  renderColorPicker('catColorOptions', COLORS[0]);
+  // Reset footer to just cancel+save
+  document.getElementById('catModalFooter').innerHTML =
+    '<button class="btn-sm btn-ghost" onclick="closeModal(\'catModal\')">取消</button>' +
+    '<button class="btn-sm btn-primary" onclick="saveCategory()">保存</button>';
+  openModal('catModal');
+  document.getElementById('catName').focus();
+}
+
+function openEditCategory(catId) {
+  const cat = data.find(c => c.id === catId);
+  if (!cat) return;
+  document.getElementById('catModalTitle').textContent = '编辑分类';
+  document.getElementById('catEditId').value = catId;
+  document.getElementById('catName').value = cat.name;
+  document.getElementById('catIcon').value = cat.icon;
+  renderColorPicker('catColorOptions', cat.color);
+  document.getElementById('catModalFooter').innerHTML =
+    '<button class="btn-sm btn-danger" onclick="deleteCategory(\'' + catId + '\');closeModal(\'catModal\')">删除分类</button>' +
+    '<div style="flex:1"></div>' +
+    '<button class="btn-sm btn-ghost" onclick="closeModal(\'catModal\')">取消</button>' +
+    '<button class="btn-sm btn-primary" onclick="saveCategory()">保存</button>';
+  openModal('catModal');
+}
+
+function saveCategory() {
+  const name = document.getElementById('catName').value.trim();
+  if (!name) { toast('请填写分类名称'); return; }
+  const editId = document.getElementById('catEditId').value;
+  const icon = document.getElementById('catIcon').value.trim() || '📁';
+  const color = getPickedColor('catColorOptions');
+
+  if (editId) {
+    const cat = data.find(c => c.id === editId);
+    if (cat) { cat.name = name; cat.icon = icon; cat.color = color; }
+  } else {
+    data.push({ id: uid(), name, icon, color, builtin: false, sites: [] });
+  }
+  saveData();
+  closeModal('catModal');
+  render(document.getElementById('searchInput').value);
+  toast(editId ? '分类已更新' : '分类已创建');
+}
+
+function deleteCategory(catId) {
+  const cat = data.find(c => c.id === catId);
+  if (!cat) return;
+  if (cat.builtin) { toast('内置分类不可删除'); return; }
+  if (!confirm(`确定删除分类「${cat.name}」及其所有网站？`)) return;
+  data = data.filter(c => c.id !== catId);
+  saveData();
+  render(document.getElementById('searchInput').value);
+  toast('分类已删除');
+}
+
+// ===== EXPORT / IMPORT =====
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ai-nav-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('配置已导出');
+}
+
+function importData() {
+  document.getElementById('fileImport').click();
+}
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) throw new Error('invalid');
+      data = imported;
+      saveData();
+      render();
+      toast('配置已导入');
+    } catch(err) {
+      toast('导入失败：文件格式不正确');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ===== TOAST =====
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ===== KEYBOARD =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+  }
+  if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// ===== INIT =====
+loadData();
+render();
+</script>
+</body>
+</html>
