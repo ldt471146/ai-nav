@@ -44,7 +44,7 @@ input,textarea,select{font-family:inherit}
 
 /* ===== SIDEBAR NAV (category tabs) ===== */
 .layout{max-width:1280px;margin:0 auto;display:flex;gap:0;min-height:calc(100vh - 56px)}
-.sidebar{width:200px;flex-shrink:0;padding:16px 0 16px 20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sidebar{width:200px;flex-shrink:0;padding:16px 0 16px 20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:rgba(10,10,15,.65);backdrop-filter:blur(12px);border-right:1px solid var(--border)}
 .sidebar::-webkit-scrollbar{width:0}
 .nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:.84rem;color:var(--text-2);cursor:pointer;transition:all .15s;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nav-item:hover{background:var(--accent-soft);color:var(--text)}
