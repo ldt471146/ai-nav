@@ -397,6 +397,7 @@ const DEFAULT_DATA = [
       {id:'s_claude_code',name:'Claude Code',url:'https://github.com/anthropics/claude-code',desc:'Anthropic AI 编程 Agent',iconText:'CC',color:'#7c5cff',tag:'Agent',builtin:true},
       {id:'s_composio_hub',name:'Composio MCP Hub',url:'https://mcp.composio.dev/',desc:'MCP 一键安装配置生成器',iconText:'CM',color:'#4ade80',tag:'一键配置',builtin:true},
       {id:'s_cookbook',name:'Anthropic Cookbook',url:'https://github.com/anthropics/anthropic-cookbook/tree/main/misc/model_context_protocol',desc:'官方 MCP 示例和教程集',iconText:'CB',color:'#fb923c',tag:'示例',builtin:true},
+      {id:'s_agent_qa',name:'agent-qa',url:'https://vostride.com',desc:'自然语言测试 Web、Android 和 iOS，持久记忆与验证后的自我改进，支持 CLI/MCP',iconText:'QA',color:'#60a5fa',tag:'应用测试',builtin:true},
       {id:'s_github_me',name:'GitHub',url:'https://github.com/',desc:'全球最大代码托管平台',iconText:'GH',color:'#4b4b4b',tag:'开发',builtin:true},
     ]
   },
@@ -452,7 +453,7 @@ const DEFAULT_DATA = [
 let data = [];
 const STORAGE_KEY = 'ai_nav_data';
 
-const DATA_VERSION = 3; // bump this when DEFAULT_DATA changes
+const DATA_VERSION = 4; // bump this when DEFAULT_DATA changes
 const VER_KEY = 'ai_nav_version';
 
 function loadData() {
